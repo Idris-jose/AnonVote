@@ -6,8 +6,8 @@ export default function CreatePoll() {
   const [question, setQuestion] = useState("");
   const [options, setOptions] = useState(["", "", "", ""]);
   const [isClicked, setIsClicked] = useState(false);
-  const [error, setError] = useState("");   
-  
+  const [error, setError] = useState("");
+  const [pollData, setPollData] = useState(null);
 
   const handleOptionChange = (index, value) => {
     const newOptions = [...options];
@@ -17,26 +17,54 @@ export default function CreatePoll() {
 
   const onSubmit = (e) => {
     e.preventDefault();
-    if (question != "" && options[1] !== "") {
-     setIsClicked(true);
-    } 
-    else{
-        setError("Please fill in the question and at least two options.");
-        
+    setError(""); // Clear previous errors
+    
+    // Fixed validation logic
+    if (question.trim() === "" || options[0].trim() === "" || options[1].trim() === "") {
+      setError("Please fill in the question and at least two options.");
+      return;
     }
     
     // Filter out empty options and create the options array
     const filteredOptions = options.filter((opt) => opt.trim() !== "");
-    const pollData = {
-      question,
-      options: filteredOptions,
+    const newPollData = {
+      id: Date.now(), // Simple ID generation
+      question: question.trim(),
+      options: filteredOptions.map(option => ({
+        text: option.trim(),
+        votes: 0
+      })),
+      totalVotes: 0,
+      createdAt: new Date().toISOString()
     };
-    console.log(pollData);
+    
+    setPollData(newPollData);
+    setIsClicked(true);
+    console.log(newPollData);
     // You can add further logic here (e.g., send pollData to backend)
   };
 
-
   const navigate = useNavigate();
+
+  const generatePollLink = () => {
+    return `${window.location.origin}/poll/${pollData?.id}`;
+  };
+
+  const copyToClipboard = () => {
+    const link = generatePollLink();
+    navigator.clipboard.writeText(link).then(() => {
+      // You could add a toast notification here
+      alert("Link copied to clipboard!");
+    });
+  };
+
+  const resetForm = () => {
+    setQuestion("");
+    setOptions(["", "", "", ""]);
+    setIsClicked(false);
+    setError("");
+    setPollData(null);
+  };
 
   return (
     <div className="flex min-h-screen">
@@ -94,38 +122,57 @@ export default function CreatePoll() {
                 value={options[3]}
                 onChange={(e) => handleOptionChange(3, e.target.value)}
               />
-                <h1 className="text-red-500 ">{error}</h1>
+              
+              {error && <h1 className="text-red-500">{error}</h1>}
+              
               <button
                 type="submit"
-                className="bg-gray-950 rounded px-4 py-1 mt-2 text-white"
+                className="bg-gray-950 rounded px-4 py-1 mt-2 text-white hover:bg-gray-800 transition-colors"
               >
                 Create Poll
               </button>
             </form>
           </>
         ) : (
-            <>
-              <h1 className="text-2xl font-medium mb-4">Poll created!</h1>
-          <p className="font-light text-gray-600">your poll is live,share the link below to start collecting votes. </p>
+          <>
+            <h1 className="text-2xl font-medium mb-4">Poll created!</h1>
+            <p className="font-light text-gray-600">
+              Your poll is live, share the link below to start collecting votes.
+            </p>
 
-          <div className="flex flex-col gap-2 mt-5">
-             <h1 className="font-medium mb">Poll Link</h1>
-             <input type="text" className="rounded p-3 bg-gray-100 text-black" placeholder="Link place" />
+            <div className="flex flex-col gap-2 mt-5">
+              <h1 className="font-medium mb-2">Poll Link</h1>
+              <input 
+                type="text" 
+                className="rounded p-3 bg-gray-100 text-black" 
+                value={generatePollLink()}
+                readOnly
+              />
 
-             <div className="flex gap-3 mt-3">
-                <button className="bg-gray-950 rounded px-4 py-1 mt-2 text-white">copy Link </button>
-                 <button className="bg-gray-100 rounded px-4 py-1 mt-2 text-black" onClick={() => navigate('/pollDetails', { state: { pollData } })}>View Poll </button>
-             </div>
-             <p className="font-light text-gray-600 mt-3"> Want to create another poll?</p>
+              <div className="flex gap-3 mt-3">
+                <button 
+                  className="bg-gray-950 rounded px-4 py-1 mt-2 text-white hover:bg-gray-800 transition-colors"
+                  onClick={copyToClipboard}
+                >
+                  Copy Link
+                </button>
+                <button 
+                  className="bg-gray-100 rounded px-4 py-1 mt-2 text-black hover:bg-gray-200 transition-colors" 
+                  onClick={() => navigate('/pollDetails', { state: { pollData } })}
+                >
+                  View Poll
+                </button>
+              </div>
+              
+              <p className="font-light text-gray-600 mt-3">Want to create another poll?</p>
               <button
-                className="border-black w-fit border-1 rounded px-4 py-1 mt-2 text-black"
-                onClick={() => navigate('/create')}
+                className="border-black w-fit border rounded px-4 py-1 mt-2 text-black hover:bg-gray-50 transition-colors"
+                onClick={resetForm}
               >
                 Create new poll
               </button>
             </div>
-            </>
-          
+          </>
         )}
       </div>
     </div>

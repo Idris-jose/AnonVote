@@ -5,6 +5,8 @@ const navItems = [
     { title: 'Home', route: '/' },
     { title: 'Create Poll', route: '/create' },
     { title: 'Results', route: '/results' },
+    { title: 'Join Poll', route: '/join' },
+ 
 ];
 
 const Sidebar = () => {

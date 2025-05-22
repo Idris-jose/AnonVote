@@ -17,14 +17,34 @@ export function PollProvider({ children }) {
   const [pollHistory, setPollHistory] = useState([]);
 
   const savePoll = (pollData) => {
-    setCurrentPoll(pollData);
-    setPollHistory(prev => [pollData, ...prev.slice(0, 9)]); // Keep last 10 polls
+    // Ensure totalVotes is calculated when saving
+    const totalVotes = pollData.options ? 
+      pollData.options.reduce((sum, option) => sum + (option.votes || 0), 0) : 0;
+    
+    const pollWithTotalVotes = {
+      ...pollData,
+      totalVotes: totalVotes
+    };
+    
+    setCurrentPoll(pollWithTotalVotes);
+    setPollHistory(prev => [pollWithTotalVotes, ...prev.slice(0, 9)]); 
   };
 
   const updatePoll = (updatedPollData) => {
-    setCurrentPoll(updatedPollData);
+    // Ensure totalVotes is recalculated when updating
+    const totalVotes = updatedPollData.options ? 
+      updatedPollData.options.reduce((sum, option) => sum + (option.votes || 0), 0) : 0;
+    
+    const pollWithUpdatedTotalVotes = {
+      ...updatedPollData,
+      totalVotes: totalVotes
+    };
+    
+    setCurrentPoll(pollWithUpdatedTotalVotes);
     setPollHistory(prev => 
-      prev.map(poll => poll.id === updatedPollData.id ? updatedPollData : poll)
+      prev.map(poll => 
+        poll.id === pollWithUpdatedTotalVotes.id ? pollWithUpdatedTotalVotes : poll
+      )
     );
   };
 

@@ -18,7 +18,16 @@ export default function PollDetails() {
     let pollFromContext = currentPoll;
     
     if (pollFromState) {
-      setPollData(pollFromState);
+      // Ensure totalVotes is properly calculated when setting from state
+      const totalVotes = pollFromState.options ? 
+        pollFromState.options.reduce((sum, option) => sum + (option.votes || 0), 0) : 0;
+      
+      const pollWithTotalVotes = {
+        ...pollFromState,
+        totalVotes: totalVotes
+      };
+      
+      setPollData(pollWithTotalVotes);
       setLoading(false);
     } else if (pollFromContext) {
       setPollData(pollFromContext);
@@ -35,8 +44,19 @@ export default function PollDetails() {
     if (hasVoted || !pollData) return;
 
     const updatedPollData = { ...pollData };
+    
+    // Ensure the option has a votes property
+    if (!updatedPollData.options[optionIndex].votes) {
+      updatedPollData.options[optionIndex].votes = 0;
+    }
+    
+    // Increment the vote for the selected option
     updatedPollData.options[optionIndex].votes += 1;
-    updatedPollData.totalVotes += 1;
+    
+    // Recalculate total votes from all options
+    updatedPollData.totalVotes = updatedPollData.options.reduce(
+      (sum, option) => sum + (option.votes || 0), 0
+    );
 
     setPollData(updatedPollData);
     updatePoll(updatedPollData); // Update context
@@ -109,6 +129,9 @@ export default function PollDetails() {
             <p className="text-sm text-gray-600">
               Poll ID: {pollData.id}
             </p>
+            <p className="text-sm text-gray-600">
+              Total votes: {pollData.totalVotes || 0}
+            </p>
           </div>
             
           <div className="bg-white p-6 rounded-lg shadow-sm border">
@@ -130,7 +153,7 @@ export default function PollDetails() {
                       <span className="font-medium text-black">{option.text}</span>
                       {hasVoted && (
                         <span className="text-sm text-gray-600">
-                          {option.votes} votes ({getVotePercentage(option.votes)}%)
+                          {option.votes || 0} votes ({getVotePercentage(option.votes || 0)}%)
                         </span>
                       )}
                     </div>
@@ -142,7 +165,7 @@ export default function PollDetails() {
                           className={`h-2 rounded-full transition-all duration-500 ${
                             selectedOption === index ? 'bg-blue-500' : 'bg-gray-400'
                           }`}
-                          style={{ width: `${getVotePercentage(option.votes)}%` }}
+                          style={{ width: `${getVotePercentage(option.votes || 0)}%` }}
                         ></div>
                       </div>
                     )}
@@ -155,7 +178,7 @@ export default function PollDetails() {
             {hasVoted && (
               <div className="mt-6 pt-4 border-t">
                 <p className="text-sm text-gray-600">
-                  Total votes: {pollData.totalVotes}
+                  Total votes: {pollData.totalVotes || 0}
                 </p>
                 <p className="text-sm text-green-600 mt-1">
                   ✓ Your vote has been recorded

@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import Sidebar from "./Sidebar.jsx";
+import { useNavigate } from 'react-router-dom';
 
 export default function CreatePoll() {
   const [question, setQuestion] = useState("");
@@ -33,6 +34,9 @@ export default function CreatePoll() {
     console.log(pollData);
     // You can add further logic here (e.g., send pollData to backend)
   };
+
+
+  const navigate = useNavigate();
 
   return (
     <div className="flex min-h-screen">
@@ -110,10 +114,15 @@ export default function CreatePoll() {
 
              <div className="flex gap-3 mt-3">
                 <button className="bg-gray-950 rounded px-4 py-1 mt-2 text-white">copy Link </button>
-                 <button className="bg-gray-100 rounded px-4 py-1 mt-2 text-black">View Poll </button>
+                 <button className="bg-gray-100 rounded px-4 py-1 mt-2 text-black" onClick={() => navigate('/pollDetails', { state: { pollData } })}>View Poll </button>
              </div>
              <p className="font-light text-gray-600 mt-3"> Want to create another poll?</p>
-              <button className="border-black w-fit border-1 rounded px-4 py-1 mt-2 text-black">Create new poll</button>
+              <button
+                className="border-black w-fit border-1 rounded px-4 py-1 mt-2 text-black"
+                onClick={() => navigate('/create')}
+              >
+                Create new poll
+              </button>
             </div>
             </>
           

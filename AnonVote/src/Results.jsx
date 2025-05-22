@@ -1,15 +1,13 @@
-import React, { useState, useEffect } from "react";
-import Sidebar from "./Sidebar.jsx";
-import { useLocation, useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
+import Sidebar from './Sidebar.jsx';
 import { usePollContext } from './PollContext.jsx';
 
-export default function PollDetails() {
+export default function Results() {
   const location = useLocation();
   const navigate = useNavigate();
   const { currentPoll, updatePoll } = usePollContext();
   const [pollData, setPollData] = useState(null);
-  const [hasVoted, setHasVoted] = useState(false);
-  const [selectedOption, setSelectedOption] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -30,22 +28,6 @@ export default function PollDetails() {
       }, 2000);
     }
   }, [location.state, currentPoll, navigate]);
-
-  const handleVote = (optionIndex) => {
-    if (hasVoted || !pollData) return;
-
-    const updatedPollData = { ...pollData };
-    updatedPollData.options[optionIndex].votes += 1;
-    updatedPollData.totalVotes += 1;
-
-    setPollData(updatedPollData);
-    updatePoll(updatedPollData); // Update context
-    setSelectedOption(optionIndex);
-    setHasVoted(true);
-
-    // Here you would typically send the vote to your backend
-    console.log('Vote submitted for option:', optionIndex, updatedPollData);
-  };
 
   const getVotePercentage = (votes) => {
     if (!pollData || pollData.totalVotes === 0) return 0;
@@ -77,7 +59,7 @@ export default function PollDetails() {
         <div className="flex-1 ml-0 md:ml-64 p-4 md:p-10">
           <div className="flex flex-col items-center justify-center h-64">
             <h1 className="text-xl font-medium mb-4">
-              {loading ? "Loading poll..." : "No poll found"}
+              {loading ? "Loading results..." : "No poll data found"}
             </h1>
             <p className="text-gray-600">
               {loading ? "Please wait..." : "Redirecting to create a new poll..."}
@@ -93,13 +75,13 @@ export default function PollDetails() {
       <Sidebar />
       <div className="flex-1 ml-0 md:ml-64 p-4 md:p-10">
         <div className="flex flex-col gap-4 md:gap-6">
-          <h1 className="font-bold text-2xl">Poll Overview</h1>
+          <h1 className="font-bold text-2xl">Poll Results</h1>
           <p className="font-light text-gray-600">
-            Share your poll and track live results
+            Live results for your poll
           </p>
 
           {/* Poll Question */}
-          <div className="bg-gray-100 flex flex-col rounded-2xl p-4 mb-4">
+          <div className="bg-gray-100 flex flex-col rounded-2xl p-3 mb-4">
             <h2 className="text-xl font-semibold mb-2 text-black">
               {pollData.question}
             </h2>
@@ -107,68 +89,41 @@ export default function PollDetails() {
               Created on: {new Date(pollData.createdAt).toLocaleDateString()}
             </p>
             <p className="text-sm text-gray-600">
-              Poll ID: {pollData.id}
+              Total votes: {pollData.totalVotes}
             </p>
           </div>
-            
+
+          {/* Results Display */}
           <div className="bg-white p-6 rounded-lg shadow-sm border">
-            {/* Poll Options */}
-            <div className="space-y-4">
-              {pollData.options.map((option, index) => (
-                <div key={index} className="space-y-2">
-                  <div
-                    className={`p-4 rounded-lg border cursor-pointer transition-all ${
-                      hasVoted
-                        ? selectedOption === index
-                          ? 'bg-blue-100 border-blue-400'
-                          : 'bg-gray-50 border-gray-200 cursor-default'
-                        : 'hover:bg-gray-50 border-gray-200 hover:border-gray-300'
-                    }`}
-                    onClick={() => handleVote(index)}
-                  >
-                    <div className="flex justify-between items-center">
-                      <span className="font-medium text-black">{option.text}</span>
-                      {hasVoted && (
+            <h3 className="font-semibold mb-4">Results Breakdown</h3>
+            
+            {pollData.totalVotes === 0 ? (
+              <div className="text-center py-8">
+                <p className="text-gray-500 mb-2">No votes yet</p>
+                <p className="text-sm text-gray-400">Share your poll to start collecting votes!</p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {pollData.options
+                  .sort((a, b) => b.votes - a.votes) // Sort by vote count (highest first)
+                  .map((option, index) => (
+                    <div key={index} className="space-y-2">
+                      <div className="flex justify-between items-center">
+                        <span className="font-medium text-black">{option.text}</span>
                         <span className="text-sm text-gray-600">
                           {option.votes} votes ({getVotePercentage(option.votes)}%)
                         </span>
-                      )}
-                    </div>
-                    
-                    {/* Progress bar (shown after voting) */}
-                    {hasVoted && (
-                      <div className="mt-2 w-full bg-gray-200 rounded-full h-2">
+                      </div>
+                      
+                      {/* Progress bar */}
+                      <div className="w-full bg-gray-200 rounded-full h-3">
                         <div
-                          className={`h-2 rounded-full transition-all duration-500 ${
-                            selectedOption === index ? 'bg-blue-500' : 'bg-gray-400'
-                          }`}
+                          className="bg-blue-500 h-3 rounded-full transition-all duration-500"
                           style={{ width: `${getVotePercentage(option.votes)}%` }}
                         ></div>
                       </div>
-                    )}
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            {/* Vote Summary */}
-            {hasVoted && (
-              <div className="mt-6 pt-4 border-t">
-                <p className="text-sm text-gray-600">
-                  Total votes: {pollData.totalVotes}
-                </p>
-                <p className="text-sm text-green-600 mt-1">
-                  ✓ Your vote has been recorded
-                </p>
-              </div>
-            )}
-
-            {/* Voting Instructions */}
-            {!hasVoted && (
-              <div className="mt-4 p-3 bg-blue-50 rounded-lg">
-                <p className="text-sm text-blue-700">
-                  Click on an option to cast your vote
-                </p>
+                    </div>
+                  ))}
               </div>
             )}
           </div>
@@ -193,18 +148,18 @@ export default function PollDetails() {
           </div>
 
           {/* Actions */}
-          <div className="flex gap-3 flex-wrap">
+          <div className="flex gap-3">
+            <button
+              className="bg-gray-950 rounded px-4 py-2 text-white hover:bg-gray-800 transition-colors"
+              onClick={() => navigate('/pollDetails', { state: { pollData } })}
+            >
+              Back to Poll
+            </button>
             <button
               className="bg-gray-950 rounded px-4 py-2 text-white hover:bg-gray-800 transition-colors"
               onClick={() => navigate('/create')}
             >
               Create New Poll
-            </button>
-            <button
-              className="bg-blue-600 rounded px-4 py-2 text-white hover:bg-blue-700 transition-colors"
-              onClick={() => navigate('/results', { state: { pollData } })}  
-            >
-              View Results
             </button>
             <button
               className="border border-gray-300 rounded px-4 py-2 text-black hover:bg-gray-50 transition-colors"
